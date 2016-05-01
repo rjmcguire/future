@@ -209,12 +209,12 @@ alias pending()  = pending!Unit;
 
 template isReady(A)
 {
-  bool isReady(shared(Future!A) future)
+  bool isReady(const(shared(Future!A)) future)
   { return future._ready; }
 }
 template isPending(A)
 {
-  bool isPending(shared(Future!A) future)
+  bool isPending(const(shared(Future!A)) future)
   { return ! future.isReady; }
 }
 
