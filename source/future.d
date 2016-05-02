@@ -96,8 +96,8 @@ alias defaultWait = Thread.yield;
   */
   auto ex5b = async!((){ throw new Exception("!"); });
   auto ex5c = async!((){ assert(0, "!"); });
-  assert(ex5b.await.result.failureReason == "!");
-  assert(ex5c.await.result.failureReason == "!");
+  assert(ex5b.await.result.isFailure);
+  assert(ex5c.await.result.isFailure);
   /*
     by the way, functions that return void can have their result visited with no arguments
   */
@@ -174,7 +174,9 @@ template fulfill(A)
   {
       synchronized(future)
         if(future.isReady)
+				{
           return future;
+				}
         else
         {
           *cast(A*)&future._result = a;
@@ -204,8 +206,6 @@ template onFulfill(A)
 		return future.onFulfill((A _){ callback(); });
 	}
 }
-
-alias pending()  = pending!Unit;
 
 template isReady(A)
 {
@@ -356,5 +356,24 @@ template race(Futures...) if(allSatisfy!(isFuture, Futures))
 	auto race(Futures futures)
 	{
 		return .race(futures.tuple);
+	}
+}
+
+// overloads for units
+alias pending()  = pending!Unit;
+alias ready()  = ready!Unit;
+
+shared(Future!Unit) fulfill(shared(Future!Unit) future)
+{ return future.fulfill(unit); }
+
+// invert nesting of an outcome(future)
+template deferOutcome(A)
+{
+	shared(Future!(Outcome!A)) deferOutcome(Outcome!(shared(Future!A)) outcomeFuture)
+	{
+		return outcomeFuture.visit!(
+			"success", then!success,
+			"failure", p_!(failure!A, ready),
+		);
 	}
 }
