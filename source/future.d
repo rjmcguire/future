@@ -144,6 +144,11 @@ template Future(A)
   {
     alias Result = A;
 
+		static struct Functor
+		{
+			alias natural = .ready;
+		}
+
     private:
     void delegate(A)[] _onFulfill;
     A _result;
